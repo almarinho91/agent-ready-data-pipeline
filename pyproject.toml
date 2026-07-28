@@ -20,6 +20,9 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+agent_ready_pipeline = ["py.typed"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
