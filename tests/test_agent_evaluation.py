@@ -1,8 +1,14 @@
 """Tests for agent-change evaluation."""
 
+import subprocess
 from typing import Any
 
-from agent_ready_pipeline.agent_evaluation import evaluate_paths
+import pytest
+
+from agent_ready_pipeline.agent_evaluation import (
+    evaluate_paths,
+    run_required_commands,
+)
 
 
 def create_task(**overrides: Any) -> dict[str, Any]:
@@ -93,4 +99,72 @@ def test_evaluate_paths_enforces_maximum_file_count() -> None:
 
     assert failures == [
         "Too many files were changed: 3 changed, maximum allowed is 2.",
+    ]
+
+
+def test_run_required_commands_executes_allowlisted_command(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Execute an allowlisted command without invoking a shell."""
+    captured_arguments: list[tuple[str, ...]] = []
+
+    def fake_run(
+        arguments: tuple[str, ...],
+        **kwargs: Any,
+    ) -> subprocess.CompletedProcess[str]:
+        captured_arguments.append(arguments)
+        assert kwargs == {
+            "text": True,
+            "check": False,
+        }
+        return subprocess.CompletedProcess(
+            args=arguments,
+            returncode=0,
+        )
+
+    monkeypatch.setattr(
+        "agent_ready_pipeline.agent_evaluation.subprocess.run",
+        fake_run,
+    )
+
+    failures = run_required_commands(
+        {
+            "required_commands": [
+                "ruff check .",
+            ]
+        }
+    )
+
+    assert failures == []
+    assert captured_arguments == [
+        ("ruff", "check", "."),
+    ]
+
+
+def test_run_required_commands_rejects_unlisted_command(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Reject a command that is not explicitly allowlisted."""
+
+    def fail_if_called(
+        *args: Any,
+        **kwargs: Any,
+    ) -> subprocess.CompletedProcess[str]:
+        raise AssertionError("subprocess.run must not be called")
+
+    monkeypatch.setattr(
+        "agent_ready_pipeline.agent_evaluation.subprocess.run",
+        fail_if_called,
+    )
+
+    failures = run_required_commands(
+        {
+            "required_commands": [
+                "pytest && echo unsafe",
+            ]
+        }
+    )
+
+    assert failures == [
+        "Command is not allowed: pytest && echo unsafe",
     ]
