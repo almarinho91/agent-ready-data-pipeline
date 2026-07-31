@@ -11,6 +11,14 @@ from typing import Any
 
 TaskSpecification = dict[str, Any]
 
+ALLOWED_COMMANDS: dict[str, tuple[str, ...]] = {
+    "ruff format --check .": ("ruff", "format", "--check", "."),
+    "ruff check .": ("ruff", "check", "."),
+    "mypy src tests": ("mypy", "src", "tests"),
+    "mypy src tests scripts": ("mypy", "src", "tests", "scripts"),
+    "pytest": ("pytest",),
+}
+
 
 def run_git_command(arguments: list[str]) -> list[str]:
     """Run a Git command and return its non-empty output lines."""
@@ -118,7 +126,7 @@ def evaluate_paths(
 def run_required_commands(
     task: TaskSpecification,
 ) -> list[str]:
-    """Run the validation commands required by the task."""
+    """Run allowlisted validation commands required by the task."""
     failures: list[str] = []
     required_commands = task.get("required_commands", [])
 
@@ -130,12 +138,18 @@ def run_required_commands(
             failures.append("Every required command must be a string.")
             continue
 
+        arguments = ALLOWED_COMMANDS.get(command)
+
+        if arguments is None:
+            failures.append(f"Command is not allowed: {command}")
+            continue
+
         print(f"\nRunning: {command}")
 
         completed_process = subprocess.run(
-            command,
-            shell=True,
+            arguments,
             text=True,
+            check=False,
         )
 
         if completed_process.returncode != 0:
