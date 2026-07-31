@@ -1,15 +1,15 @@
 """Tests for agent-change evaluation."""
 
 import subprocess
+from typing import Any
 
 import pytest
-
-from typing import Any
 
 from agent_ready_pipeline.agent_evaluation import (
     evaluate_paths,
     run_required_commands,
 )
+
 
 def create_task(**overrides: Any) -> dict[str, Any]:
     """Create a task specification with optional overrides."""
@@ -100,6 +100,7 @@ def test_evaluate_paths_enforces_maximum_file_count() -> None:
     assert failures == [
         "Too many files were changed: 3 changed, maximum allowed is 2.",
     ]
+
 
 def test_run_required_commands_executes_allowlisted_command(
     monkeypatch: pytest.MonkeyPatch,
