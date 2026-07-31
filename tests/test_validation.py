@@ -1,36 +1,29 @@
 """Tests for schema validation."""
 
+from pathlib import Path
+
 import pytest
 
-from agent_ready_pipeline.ingestion import CsvRow
+from agent_ready_pipeline.ingestion import load_csv
 from agent_ready_pipeline.validation import (
     EmptyDatasetError,
     MissingRequiredColumnsError,
     validate_required_columns,
 )
 
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
+
 
 def test_validate_required_columns_accepts_valid_schema() -> None:
     """Accept a dataset containing every required column."""
-    rows: list[CsvRow] = [
-        {
-            "id": "1",
-            "name": "Ana",
-            "email": "ana@example.com",
-        }
-    ]
+    rows = load_csv(FIXTURES_DIR / "valid_customers.csv")
 
     validate_required_columns(rows, {"id", "name", "email"})
 
 
 def test_validate_required_columns_reports_missing_columns() -> None:
     """Report required columns that are not present in the dataset."""
-    rows: list[CsvRow] = [
-        {
-            "id": "1",
-            "name": "Ana",
-        }
-    ]
+    rows = load_csv(FIXTURES_DIR / "missing_columns.csv")
 
     with pytest.raises(
         MissingRequiredColumnsError,
