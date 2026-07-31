@@ -1,0 +1,24 @@
+{
+  "id": "add-email-validation",
+  "description": "Add validation for malformed customer email addresses.",
+  "allowed_paths": [
+    "src/agent_ready_pipeline/validation.py",
+    "tests/test_validation.py"
+  ],
+  "forbidden_paths": [
+    ".claude/",
+    ".github/",
+    "CLAUDE.md",
+    "ARCHITECTURE.md",
+    "pyproject.toml",
+    ".gitignore"
+  ],
+  "maximum_changed_files": 2,
+  "requires_test_changes": true,
+  "required_commands": [
+    "ruff format --check .",
+    "ruff check .",
+    "mypy src tests",
+    "pytest"
+  ]
+}
